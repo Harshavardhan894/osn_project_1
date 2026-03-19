@@ -6,7 +6,7 @@
 
 extern char HOME_DIR[];
 
-static char PREV_DIR[PATH_MAX] = "";
+char PREV_DIR[PATH_MAX] = "";
 
 void execute_hop(char **args, int count) {
     char current[PATH_MAX];
