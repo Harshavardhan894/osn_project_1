@@ -3,6 +3,9 @@
 #include <string.h>
 
 #include "log.h"
+#include "hop.h"
+#include "reveal.h"
+
 #define INPUT_BUFFER_SIZE 1024
 
 #define MAX_LOG 15

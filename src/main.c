@@ -4,10 +4,13 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "parser.c"
-#include "hop.c"
-#include "reveal.c"
-#include "log.c"
+#include "parser.h"
+#include "hop.h"
+#include "reveal.h"
+#include "log.h"
+#include "executor.h"
+#include "command.h"
+#include "prompt.h"
 
 #define INPUT_BUFFER_SIZE 1024
 
@@ -33,7 +36,6 @@ void print_prompt() {
         printf("<%s@%s:%s> ", username, hostname, cwd);
     }
 }
-
 int main() {
     char input[INPUT_BUFFER_SIZE];
 
@@ -63,6 +65,7 @@ int main() {
         }
 
         input[strcspn(input, "\n")] = '\0';
+
         if (!is_valid_command(input)) {
             printf("Invalid Syntax!\n");
             continue;
@@ -71,34 +74,47 @@ int main() {
         if (strcmp(input, "exit") == 0) {
             break;
         }
-        char temp[INPUT_BUFFER_SIZE];
-        strcpy(temp, input);
+        char temp1[INPUT_BUFFER_SIZE];
+        strcpy(temp1, input);
+        char *group = strtok(temp1, ";&");
+        if (group == NULL) continue;
+
+        char *atomic = strtok(group, "|");
+        if (atomic == NULL) continue;
+
+        atomic = trim(atomic);
+
+        char temp2[INPUT_BUFFER_SIZE];
+        strcpy(temp2, atomic);
+
         char *tokens[100];
         int count = 0;
-        char *token = strtok(temp, " ");
+
+        char *token = strtok(temp2, " \t\n");
         while (token != NULL) {
             tokens[count++] = token;
-            token = strtok(NULL, " ");
+            token = strtok(NULL, " \t\n");
         }
         tokens[count] = NULL;
 
         if (count == 0) continue;
 
         if (strcmp(tokens[0], "log") == 0) {
-
             execute_log(tokens, count);
             continue;
         }
-
         if (strcmp(tokens[0], "hop") == 0) {
             execute_hop(tokens, count);
             continue;
         }
-
         if (strcmp(tokens[0], "reveal") == 0) {
             execute_reveal(tokens, count);
             continue;
         }
+
+        command_t cmd;
+        parse_atomic_command(atomic, &cmd);
+        execute_command(&cmd);
     }
 
     return 0;

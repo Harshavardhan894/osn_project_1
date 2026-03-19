@@ -8,7 +8,7 @@ CFLAGS = -std=c99 \
 -fno-asm \
 -Iinclude
 
-SRC = src/main.c
+SRC = src/main.c src/parser.c src/executor.c src/log.c src/hop.c src/reveal.c
 
 OUT = shell.out
 

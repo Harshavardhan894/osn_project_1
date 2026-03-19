@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 #include "parser.h"
-
+#include "command.h"
 #define MAX_TOKENS 100
 
 int split(char *str, char *delim, char **out) {
@@ -66,7 +66,50 @@ int valid_atomic(char *cmd) {
 
     return 1;
 }
+void parse_atomic_command(char *input, command_t *cmd) {
+    cmd->input_file = NULL;
+    cmd->output_file = NULL;
+    cmd->append = 0;
 
+    int i = 0;
+
+    char temp[1024];
+    strcpy(temp, input);
+
+    char *token = strtok(temp, " \t\n\r");
+
+    while (token != NULL) {
+
+        if (strcmp(token, "<") == 0) {
+            token = strtok(NULL, " \t\n\r");
+            if (token) cmd->input_file = token;
+        }
+
+        else if (strcmp(token, ">") == 0) {
+            token = strtok(NULL, " \t\n\r");
+            if (token) {
+                cmd->output_file = token;
+                cmd->append = 0;
+            }
+        }
+
+        else if (strcmp(token, ">>") == 0) {
+            token = strtok(NULL, " \t\n\r");
+            if (token) {
+                cmd->output_file = token;
+                cmd->append = 1;
+            }
+        }
+
+        else {
+            cmd->args[i++] = token;
+        }
+
+        token = strtok(NULL, " \t\n\r");
+    }
+
+    cmd->args[i] = NULL;
+}
 int valid_cmd_group(char *group) {
     char *parts[MAX_TOKENS];
     int count = 0;
