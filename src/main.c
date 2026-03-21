@@ -76,45 +76,63 @@ int main() {
         }
         char temp1[INPUT_BUFFER_SIZE];
         strcpy(temp1, input);
-        char *group = strtok(temp1, ";&");
-        if (group == NULL) continue;
 
-        char *atomic = strtok(group, "|");
-        if (atomic == NULL) continue;
+        char *saveptr = NULL;
+        char *group = strtok_r(temp1, ";&", &saveptr);
+        while (group != NULL) {
+            char *group_trim = trim(group);
+            if (*group_trim == '\0') {
+                group = strtok_r(NULL, ";&", &saveptr);
+                continue;
+            }
 
-        atomic = trim(atomic);
+            if (strchr(group_trim, '|') != NULL) {
+                execute_pipeline(group_trim);
+                group = strtok_r(NULL, ";&", &saveptr);
+                continue;
+            }
 
-        char temp2[INPUT_BUFFER_SIZE];
-        strcpy(temp2, atomic);
+            char temp2[INPUT_BUFFER_SIZE];
+            strcpy(temp2, group_trim);
 
-        char *tokens[100];
-        int count = 0;
+            char *tokens[100];
+            int count = 0;
 
-        char *token = strtok(temp2, " \t\n");
-        while (token != NULL) {
-            tokens[count++] = token;
-            token = strtok(NULL, " \t\n");
+            char *token = strtok(temp2, " \t\n");
+            while (token != NULL) {
+                tokens[count++] = token;
+                token = strtok(NULL, " \t\n");
+            }
+            tokens[count] = NULL;
+
+            if (count == 0) {
+                group = strtok_r(NULL, ";&", &saveptr);
+                continue;
+            }
+
+            if (strcmp(tokens[0], "log") == 0) {
+                execute_log(tokens, count);
+                group = strtok_r(NULL, ";&", &saveptr);
+                continue;
+            }
+            if (strcmp(tokens[0], "hop") == 0) {
+                execute_hop(tokens, count);
+                group = strtok_r(NULL, ";&", &saveptr);
+                continue;
+            }
+            if (strcmp(tokens[0], "reveal") == 0) {
+                execute_reveal(tokens, count);
+                group = strtok_r(NULL, ";&", &saveptr);
+                continue;
+            }
+
+            command_t cmd;
+            parse_atomic_command(group_trim, &cmd);
+            execute_command(&cmd);
+            free_command(&cmd);
+
+            group = strtok_r(NULL, ";&", &saveptr);
         }
-        tokens[count] = NULL;
-
-        if (count == 0) continue;
-
-        if (strcmp(tokens[0], "log") == 0) {
-            execute_log(tokens, count);
-            continue;
-        }
-        if (strcmp(tokens[0], "hop") == 0) {
-            execute_hop(tokens, count);
-            continue;
-        }
-        if (strcmp(tokens[0], "reveal") == 0) {
-            execute_reveal(tokens, count);
-            continue;
-        }
-
-        command_t cmd;
-        parse_atomic_command(atomic, &cmd);
-        execute_command(&cmd);
     }
 
     return 0;
