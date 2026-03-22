@@ -1,15 +1,15 @@
-sleep 3 &
-echo foreground works
-sleep 3 &
-echo foreground works
-cat &
-echo still-responsive
-cat &
-sleep 3 &
-echo foreground works
-clear
-cat < src/log.c | grep printf > hello.txt
-cat < src/log.c &
-echo hi
-clear
-exit
+ping 49248 19
+activities
+ping 49248 18
+activites
+activities
+sleep 30 &
+activities
+ping 49248 18
+ping 49248 19
+sleep 30 &
+activities
+ping 49333 19
+ping 49333 18
+activities
+sleep 100
