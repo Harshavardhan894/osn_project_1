@@ -1,0 +1,15 @@
+sleep 3 &
+echo foreground works
+sleep 3 &
+echo foreground works
+cat &
+echo still-responsive
+cat &
+sleep 3 &
+echo foreground works
+clear
+cat < src/log.c | grep printf > hello.txt
+cat < src/log.c &
+echo hi
+clear
+exit

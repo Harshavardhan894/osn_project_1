@@ -8,6 +8,48 @@
 #include "command.h"
 #include "parser.h"
 
+static void execute_in_child(command_t *cmd, int detach_stdin) {
+    if (cmd->input_file != NULL) {
+        int fd = open(cmd->input_file, O_RDONLY);
+        if (fd < 0) {
+            printf("No such file or directory\n");
+            exit(1);
+        }
+        dup2(fd, STDIN_FILENO);
+        close(fd);
+    } else if (detach_stdin) {
+        int fd = open("/dev/null", O_RDONLY);
+        if (fd >= 0) {
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+        }
+    }
+
+    if (cmd->output_file != NULL) {
+        int fd;
+        if (cmd->append) {
+            fd = open(cmd->output_file, O_WRONLY | O_CREAT | O_APPEND, 0644);
+        } else {
+            fd = open(cmd->output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+        }
+
+        if (fd < 0) {
+            printf("Unable to create file for writing\n");
+            exit(1);
+        }
+
+        dup2(fd, STDOUT_FILENO);
+        close(fd);
+    }
+
+    if (cmd->args[0] == NULL) exit(0);
+
+    if (execvp(cmd->args[0], cmd->args) == -1) {
+        printf("Command not found!\n");
+        exit(1);
+    }
+}
+
 void execute_command(command_t *cmd) {
     pid_t pid = fork();
 
@@ -17,41 +59,25 @@ void execute_command(command_t *cmd) {
     }
 
     if (pid == 0) {
-        if (cmd->input_file != NULL) {
-            int fd = open(cmd->input_file, O_RDONLY);
-            if (fd < 0) {
-                printf("No such file or directory\n");
-                exit(1);
-            }
-            dup2(fd, STDIN_FILENO);
-            close(fd);
-        }
-        if (cmd->output_file != NULL) {
-            int fd;
-            if (cmd->append) {
-                fd = open(cmd->output_file, O_WRONLY | O_CREAT | O_APPEND, 0644);
-            } else {
-                fd = open(cmd->output_file, O_WRONLY | O_CREAT | O_TRUNC, 0644);
-            }
-
-            if (fd < 0) {
-                printf("Unable to create file for writing\n");
-                exit(1);
-            }
-
-            dup2(fd, STDOUT_FILENO);
-            close(fd);
-        }
-        if (cmd->args[0] == NULL) exit(0);
-
-        if (execvp(cmd->args[0], cmd->args) == -1) {
-            printf("Command not found!\n");
-            exit(1);
-        }
-    }
-    else {
+        execute_in_child(cmd, 0);
+    } else {
         waitpid(pid, NULL, 0);
     }
+}
+
+pid_t execute_command_background(command_t *cmd) {
+    pid_t pid = fork();
+
+    if (pid < 0) {
+        perror("fork failed");
+        return -1;
+    }
+
+    if (pid == 0) {
+        execute_in_child(cmd, 1);
+    }
+
+    return pid;
 }
 
 void execute_pipeline(char *group) {
@@ -116,4 +142,24 @@ void execute_pipeline(char *group) {
         close(pipes[i][1]);
     }
     for (int i = 0; i < n; i++) waitpid(pids[i], NULL, 0);
+}
+
+pid_t execute_pipeline_background(char *group) {
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork");
+        return -1;
+    }
+
+    if (pid == 0) {
+        int fd = open("/dev/null", O_RDONLY);
+        if (fd >= 0) {
+            dup2(fd, STDIN_FILENO);
+            close(fd);
+        }
+        execute_pipeline(group);
+        exit(0);
+    }
+
+    return pid;
 }

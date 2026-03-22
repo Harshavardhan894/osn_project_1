@@ -1,0 +1,4 @@
+        fprintf(fp, "%s\n", logs[i]);
+        printf("%d %s\n", i + 1, logs[i]);
+                printf("log: Invalid Syntax!\n");
+            printf("log: Invalid Syntax!\n");
