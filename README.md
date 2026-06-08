@@ -99,8 +99,6 @@ ping <pid> <signal_number>
 
 * Operating System Fundamentals
 * Process Scheduling
-* Inter-Process Communication (IPC)
-* Signal Handling
 * File Descriptor Management
 * Terminal Control
 
